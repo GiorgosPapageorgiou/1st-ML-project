@@ -1,9 +1,9 @@
 # Mammogram Mass Classification
 
+Six supervised learning algorithms, trained on the same data, compared on the metric that actually matters for cancer screening.
+
 > **This is not a production system and not client work.**
 > I built it on my own, for myself, to go deeper into machine learning — to implement the main supervised algorithms hands-on and compare them properly on the same data, rather than just read about them. The dataset is public (UCI), the work was done alongside a Udemy course, and nothing here was ever deployed. **It is not a clinical tool and must not be used to make a medical decision.**
-
-Six supervised learning algorithms, trained on the same data, compared on the metric that actually matters for cancer screening.
 
 ---
 

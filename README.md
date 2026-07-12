@@ -1,95 +1,111 @@
-# **Mammographic Mass Classification using Machine Learning**
+# Mammogram Mass Classification
 
-This project aims to predict whether a mammogram mass is benign or malignant using various machine learning techniques. The project is based on the "Mammographic Masses" dataset from the UCI repository. Multiple supervised learning algorithms have been applied and evaluated to find the most accurate model for binary classification.
+Six supervised learning algorithms, trained on the same data, compared on the metric that actually matters for cancer screening.
 
----
-
-## **Table of Contents**
-- [Project Overview](#project-overview)
-- [Dataset](#dataset)
-- [Project Structure](#project-structure)
-- [Installation](#installation)
-- [Dependencies](#Dependencies)
-- [Results](#results)
-
+> **A learning project — not a clinical tool.**
+> I built this on my own, while working through a Udemy machine-learning course, to get hands-on with the main supervised algorithms and compare them properly against each other on identical data. The dataset is public (UCI). Nothing here was deployed, and none of it should be used to make a medical decision.
 
 ---
 
-## **Project Overview**
+## The problem
 
-Early detection and diagnosis of breast cancer is crucial for effective treatment. This project applies machine learning algorithms to predict whether a mammographic mass is benign or malignant based on four features: age, shape, margin, and density. Several models are trained and evaluated, and their performance is compared to select the best approach for this classification task.
+A mammogram finds a mass. Is it benign, or malignant?
 
----
+Radiologists answer this well, but a large share of the biopsies they order come back benign — an invasive, expensive, frightening procedure for nothing. The question is whether four simple, cheap observations are enough to predict severity.
 
-## **Dataset**
+## Why accuracy is the wrong metric
 
-- **Source**: The "Mammographic Masses" dataset is publicly available from the UCI Machine Learning Repository: [Mammographic Mass Dataset](https://archive.ics.uci.edu/ml/datasets/Mammographic+Mass)
-- **Number of Instances**: 961
-- **Features**:
-  - **Age**: Age of the patient in years.
-  - **Shape**: Shape of the mass (1: Round, 2: Oval, 3: Lobular, 4: Irregular).
-  - **Margin**: Mass margin (1: Circumscribed, 2: Microlobulated, 3: Obscured, 4: Ill-defined, 5: Spiculated).
-  - **Density**: Mass density (1: High, 2: Iso, 3: Low, 4: Fat-containing).
-- **Target**: Severity (0: Benign, 1: Malignant).
+In screening, the two ways to be wrong are not equal:
 
----
+- **False positive** — a benign mass flagged as malignant. Cost: an unnecessary biopsy.
+- **False negative** — a malignant mass flagged as benign. Cost: **a missed cancer.**
 
-## **Project Structure**
+So the metric to optimise is **recall** — of all the masses that really were malignant, what fraction did the model catch? A model can post a respectable accuracy score while quietly missing a third of the cancers. One of the models below does exactly that.
 
-The project is divided into different scripts to improve maintainability and clarity.
+## The data
 
-- `main.py`: The main script that orchestrates the entire pipeline including data processing, model training, and evaluation.
-- `data_cleaning.py`: Contains functions for data loading and cleaning (handling missing values, feature selection).
-- `decision_tree_model.py`: Implements the Decision Tree model along with cross-validation and model evaluation.
-- `knn_model.py`: Implements the K-Nearest Neighbors (KNN) model.
-- `logistic_regression_model.py`: Implements Logistic Regression for binary classification.
-- `naive_bayes_model.py`: Implements Naive Bayes classification.
-- `nn_model.py`: Implements the Artificial Neural Network (ANN) model using Keras.
-- `model_evaluation.py`: Contains functions for evaluating the models using metrics such as accuracy, precision, recall, and F1-score.
-- `data folder`: Contains our data (mammographic_masses.data.txt, mammographic_masses.names.txt).
-- `decision_tree_visualization.png`: A visualization of the decision tree model.
+[Mammographic Mass dataset](https://archive.ics.uci.edu/ml/datasets/Mammographic+Mass), UCI Machine Learning Repository — 961 masses, each with a BI-RADS assessment and a biopsy-confirmed outcome.
 
----
+**Four features are used:**
 
-## **Installation**
+| Feature | |
+| --- | --- |
+| Age | Patient age in years |
+| Shape | Round · Oval · Lobular · Irregular |
+| Margin | Circumscribed · Microlobulated · Obscured · Ill-defined · Spiculated |
+| Density | High · Iso · Low · Fat-containing |
 
+**BI-RADS is deliberately excluded.** It is the radiologist's own 1–5 assessment of how suspicious the mass looks — effectively their prediction of the answer. Training on it would leak the label and inflate every score in the table below. The point of the exercise is to predict severity from the *raw observations*, not to learn to copy the radiologist.
 
-##### 1. Clone the Project
-Select a directory n your local machine, and then clone the repo with thw follow command:
+### Missing values
 
-```
-git clone https://github.com/GiorgosPapageorgiou/1st-ML-project.git
-```
+The dataset has holes — masses with no recorded margin, or no age. The lazy fix is to drop those rows and lose the data.
 
-##### 2. Run the Project
-To run the entire pipeline (data preprocessing, model training, and evaluation), execute the `main.py` script:
+Instead I use **MICE** (multiple imputation by chained equations, via `IterativeImputer`): each missing value is modelled as a function of the other features and filled with a prediction. All 961 records survive.
 
-```
-python main.py
-```
-
-## **Dependencies**
-
-The project relies on the following dependencies, which are listed in `requirements.txt`:
-
-```txt
-pandas
-numpy
-scikit-learn
-tensorflow
-matplotlib
-```
+Features are then standardised with `StandardScaler` and split 75/25 into train and test.
 
 ## Results
 
-The following table summarizes the performance of different models:
+Six algorithms, same split, same seed:
 
+| Model | Accuracy | Precision | **Recall** | F1 |
+| --- | --- | --- | --- | --- |
+| **Neural Network** (16 → 8 → 1) | **0.830** | 0.795 | **0.858** | **0.826** |
+| **SVM** (linear kernel) | 0.826 | 0.789 | **0.858** | 0.822 |
+| Logistic Regression | 0.822 | 0.802 | 0.823 | 0.812 |
+| K-Nearest Neighbors (K=20) | 0.809 | 0.807 | 0.779 | 0.793 |
+| Naive Bayes | 0.751 | 0.773 | 0.664 | 0.714 |
+| Decision Tree | 0.747 | 0.745 | 0.699 | 0.721 |
 
-| **Model**               | **Accuracy** | **Precision** | **Recall** | **F1-Score** |
-|-------------------------|--------------|---------------|------------|---------------|
-| Decision Tree           | 0.747        | 0.745         | 0.699      | 0.721         |
-| SVM with Linear Kernel  | 0.826        | 0.789         | 0.858      | 0.822         |
-| K-Nearest Neighbors     | 0.809        | 0.807         | 0.779      | 0.793         |
-| Naive Bayes            | 0.751        | 0.773         | 0.664      | 0.714         |
-| Logistic Regression     | 0.822        | 0.802         | 0.823      | 0.812         |
-| Neural Network          | 0.830        | 0.795         | 0.858      | 0.826         |
+### Reading the table
+
+**The neural network and the linear SVM tie on recall at 0.858** — both catch roughly 86% of malignant masses. The SVM gets there with a linear decision boundary and no training loop, which is the more interesting result: the extra capacity of the network buys almost nothing. Four features and 961 rows don't have enough structure to reward a deeper model.
+
+**Naive Bayes is the cautionary tale.** Its accuracy (0.751) looks merely mediocre — 8 points behind the leader. Its recall (0.664) is a different story: **it misses a third of the malignant masses.** Pick a model by accuracy alone and you would never notice. This is the whole argument for choosing your metric before you choose your model.
+
+**The single decision tree overfits**, as an unpruned tree on four features will. It finishes last, and the neural network beats it by more than 10 points of F1.
+
+---
+
+## Running it
+
+**Requirements:** Python 3, and:
+
+```bash
+pip install pandas numpy scikit-learn tensorflow matplotlib fancyimpute
+```
+
+Then, from the repository root:
+
+```bash
+python main.py
+```
+
+It trains all six models in sequence and prints each one's metrics.
+
+> **Note:** the data path in `main.py` is written with a Windows separator (`data\mammographic_masses.data.txt`). On macOS or Linux, switch it to a forward slash before running.
+
+## Project structure
+
+| File | |
+| --- | --- |
+| `main.py` | Runs the pipeline — load, impute, split, train all six, evaluate |
+| `data_cleaning.py` | Loads the raw data, MICE imputation, standardisation |
+| `model_evaluation.py` | Accuracy / precision / recall / F1 for a set of predictions |
+| `decision_tree_model.py` | Decision tree, plus k-fold cross-validation and tree plotting |
+| `SVM_model.py` | SVM — `main.py` sweeps the linear, poly, rbf and sigmoid kernels |
+| `KNN_model.py` | K-nearest neighbours |
+| `Naive_Bayes_model.py` | Multinomial Naive Bayes (features re-scaled to [0,1] first) |
+| `logistic_regression_model.py` | Logistic regression |
+| `neural_network_model.py` | Keras sequential net — 16 → 8 → 1, Adam, 100 epochs |
+| `data/` | The UCI dataset and its field descriptions |
+
+## Stack
+
+Python · scikit-learn · TensorFlow / Keras · pandas · fancyimpute · matplotlib
+
+## Credits
+
+Dataset: [UCI Machine Learning Repository — Mammographic Mass](https://archive.ics.uci.edu/ml/datasets/Mammographic+Mass).
+The problem framing comes from *Data Science and Machine Learning with Python* (Udemy); the pipeline, the model comparison and the analysis here are my own.
